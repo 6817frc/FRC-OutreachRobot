@@ -5,10 +5,12 @@
 package frc.robot;
 
 import edu.wpi.first.util.sendable.SendableRegistry;
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import edu.wpi.first.wpilibj.XboxController;
 
 /**
  * This is a demo program showing the use of the DifferentialDrive class, specifically it contains
@@ -16,8 +18,7 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
  */
 public class Robot extends TimedRobot {
   private final DifferentialDrive m_robotDrive;
-  private final Joystick m_leftStick;
-  private final Joystick m_rightStick;
+  private final XboxController m_controller;
 
   private final PWMSparkMax m_leftMotor = new PWMSparkMax(0);
   private final PWMSparkMax m_rightMotor = new PWMSparkMax(1);
@@ -30,8 +31,7 @@ public class Robot extends TimedRobot {
     m_rightMotor.setInverted(true);
 
     m_robotDrive = new DifferentialDrive(m_leftMotor::set, m_rightMotor::set);
-    m_leftStick = new Joystick(0);
-    m_rightStick = new Joystick(1);
+    m_controller = new XboxController(0);
 
     SendableRegistry.addChild(m_robotDrive, m_leftMotor);
     SendableRegistry.addChild(m_robotDrive, m_rightMotor);
@@ -39,6 +39,23 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.tankDrive(-m_leftStick.getY(), -m_rightStick.getY());
+    double m_leftStickY = m_controller.getLeftY();
+    double m_leftStickX = m_controller.getLeftX();
+
+    double leftPower = -m_leftStickY+m_leftStickX;
+    double rightPower = -m_leftStickY-m_leftStickX;
+
+    leftPower /= 1.5;
+    rightPower /= 1.5;
+
+    if (m_controller.getRightTriggerAxis() > 0.3) {
+      leftPower /= 1.5;
+      rightPower /= 1.5;
+    }
+
+    m_robotDrive.tankDrive(leftPower, rightPower);
+
+    SmartDashboard.putNumber("Left Power", leftPower);
+    SmartDashboard.putNumber("Right Power", rightPower);
   }
 }
