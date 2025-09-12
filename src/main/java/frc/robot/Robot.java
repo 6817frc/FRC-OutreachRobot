@@ -17,43 +17,49 @@ import edu.wpi.first.wpilibj.XboxController;
  * the code necessary to operate a robot with tank drive.
  */
 public class Robot extends TimedRobot {
-  private final DifferentialDrive m_robotDrive;
-  private final XboxController m_controller;
+  private final DifferentialDrive robotDrive;
+  private final XboxController controller;
 
-  private final PWMSparkMax m_leftMotor = new PWMSparkMax(0);
-  private final PWMSparkMax m_rightMotor = new PWMSparkMax(1);
+  private final PWMSparkMax leftMotor = new PWMSparkMax(0);
+  private final PWMSparkMax rightMotor = new PWMSparkMax(1);
 
   /** Called once at the beginning of the robot program. */
   public Robot() {
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
-    m_rightMotor.setInverted(true);
+    rightMotor.setInverted(true);
 
-    m_robotDrive = new DifferentialDrive(m_leftMotor::set, m_rightMotor::set);
-    m_controller = new XboxController(0);
+    robotDrive = new DifferentialDrive(leftMotor::set, rightMotor::set);
+    controller = new XboxController(0);
 
-    SendableRegistry.addChild(m_robotDrive, m_leftMotor);
-    SendableRegistry.addChild(m_robotDrive, m_rightMotor);
+    SendableRegistry.addChild(robotDrive, leftMotor);
+    SendableRegistry.addChild(robotDrive, rightMotor);
   }
 
   @Override
   public void teleopPeriodic() {
-    double m_leftStickY = m_controller.getLeftY();
-    double m_leftStickX = m_controller.getLeftX();
+    double leftStickY = controller.getLeftY();
+    double leftStickX = controller.getLeftX();
 
-    double leftPower = -m_leftStickY+m_leftStickX;
-    double rightPower = -m_leftStickY-m_leftStickX;
+    double leftPower = -leftStickY+leftStickX;
+    double rightPower = -leftStickY-leftStickX;
 
-    leftPower /= 1.5;
-    rightPower /= 1.5;
-
-    if (m_controller.getRightTriggerAxis() > 0.3) {
-      leftPower /= 1.5;
-      rightPower /= 1.5;
+    if (leftPower > 1 || rightPower > 1) {
+      double greatest = Math.max(leftPower, rightPower);
+      leftPower /= greatest;
+      rightPower /= greatest;
     }
 
-    m_robotDrive.tankDrive(leftPower, rightPower);
+    leftPower = (leftPower / 2 + 0.5) * (leftPower > 0.15 ? 1 : 0);
+    rightPower = (rightPower / 2 + 0.5) * (rightPower > 0.15 ? 1 : 0);
+
+    if (controller.getRightTriggerAxis() > 0.3) {
+      leftPower /= 2;
+      rightPower /= 2;
+    }
+
+    robotDrive.tankDrive(leftPower, rightPower);
 
     SmartDashboard.putNumber("Left Power", leftPower);
     SmartDashboard.putNumber("Right Power", rightPower);
