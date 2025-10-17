@@ -39,21 +39,28 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    double leftStickY = controller.getLeftY();
+    double leftStickY = -controller.getLeftY();
     double leftStickX = controller.getLeftX();
 
-    double leftPower = -leftStickY+leftStickX;
-    double rightPower = -leftStickY-leftStickX;
+    if (leftStickY < 0) {
+      leftStickX = -leftStickX;
+    }
 
-    if (leftPower > 1 || rightPower > 1) {
-      double greatest = Math.max(leftPower, rightPower);
+    double leftPower = leftStickY+leftStickX;
+    double rightPower = leftStickY-leftStickX;
+
+    if (Math.abs(leftPower) > 1 || Math.abs(rightPower) > 1) {
+      double greatest = Math.max(Math.abs(leftPower), Math.abs(rightPower));
       leftPower /= greatest;
       rightPower /= greatest;
     }
 
-    leftPower = (leftPower / 2 + 0.5) * (leftPower > 0.15 ? 1 : 0);
-    rightPower = (rightPower / 2 + 0.5) * (rightPower > 0.15 ? 1 : 0);
+    // Convert leftPower from 0-1 to 0.5-1
+    // If the power is less than 0.15, then don't move
+    leftPower = (leftPower / 2 + 0.5) * (Math.abs(leftPower) > 0.15 ? 1 : 0);
+    rightPower = (rightPower / 2 + 0.5) * (Math.abs(rightPower) > 0.15 ? 1 : 0);
 
+    // Slow mode
     if (controller.getRightTriggerAxis() > 0.3) {
       leftPower /= 2;
       rightPower /= 2;
